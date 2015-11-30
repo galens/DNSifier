@@ -24,12 +24,13 @@ class yaDNS(Gtk.Window):
 
         self.dns_config_1['A']['google.com'] = '127.0.0.1'
         self.dns_config_2['A']['yahoo.com']  = '127.0.0.1'
-
+        
+        self.dns_config_list = [self.dns_config_1, self.dns_config_2]
         
         self.nameserver = self.dns_config_1 # set default value in case no option is chosen
         
-        Gtk.Window.__init__(self, title="Yet Another DNS")
-        self.set_border_width(10)
+        Gtk.Window.__init__(self, title="yaDNS by: Galen Senogles")
+        self.set_border_width(15)
 
         # stop user from resizing
         self.set_resizable(False)
@@ -79,7 +80,6 @@ class yaDNS(Gtk.Window):
         self.servers_combo.connect("changed", self.on_server_combo_changed)
         for s in self.servers:
             self.servers_combo.append_text(s)
-        self.servers_combo.set_active(0)
         self.servers_combo.set_entry_text_column(0)
         self.box.pack_start(self.servers_combo, True, True, 0)
 
@@ -449,55 +449,58 @@ class yaDNS(Gtk.Window):
 
     def on_switch_activated(self, switch, gparam):
         global server
-        if switch.get_active():
-            state = "on"
-            self.dns_running = True
-            interface = self.local_interface.get_text()
-            nameserver = self.dns_entry.get_text()
-            nameservers = dnschef_lib.returnNameServers(nameserver)
-            self.logfile = self.log_path.get_text()            
-            ipv6=False
-            port='53'
-            
-            self.log = self.log_action(self.logfile, 'DNS Switcher is active') 
-
-            try:
-                if self.tcp_val:
-                    self.log_action(self.logfile, "DNS Switcher is running in TCP mode")
-                    server = dnschef_lib.ThreadedTCPServer((interface, int(port)), dnschef_lib.TCPHandler, self.nametodns, nameservers, ipv6, self.log)
-                else:
-                    self.log_action(self.logfile, "DNS Switcher is running in UDP mode")
-                    server = dnschef_lib.ThreadedUDPServer((interface, int(port)), dnschef_lib.UDPHandler, self.nametodns, nameservers, ipv6, self.log)
-
-                # Start a thread with the server -- that thread will then start more threads for each request
-                server_thread = threading.Thread(target=server.serve_forever)
-
-                # Exit the server thread when the main thread terminates
-                server_thread.daemon = True
-                server_thread.start()
-
-            except (KeyboardInterrupt, SystemExit):
-                server.shutdown()
-                self.log_action(self.logfile, "DNS Switcher is shutting down")
-                sys.exit()
-
-            except IOError:
-                print "[!] Failed to open log file for writing."
-
-            except Exception, e:
-                error = "[!] Failed to start the server: %s" % e
-                self.log_action(self.logfile, error)
+        tree_iter = self.servers_combo.get_active_iter()
+        if tree_iter != None:
+            if switch.get_active():
+                state = "on"
+                self.dns_running = True
+                interface = self.local_interface.get_text()
+                nameserver = self.dns_entry.get_text()
+                nameservers = dnschef_lib.returnNameServers(nameserver)
+                self.logfile = self.log_path.get_text()            
+                ipv6=False
+                port='53'
+                
+                self.log = self.log_action(self.logfile, 'yaDNS is active') 
+    
+                try:
+                    if self.tcp_val:
+                        self.log_action(self.logfile, "yaDNS is running in TCP mode")
+                        self.server = dnschef_lib.ThreadedTCPServer((interface, int(port)), dnschef_lib.TCPHandler, self.nametodns, nameservers, ipv6, self.log)
+                    else:
+                        self.log_action(self.logfile, "yaDNS is running in UDP mode")
+                        self.server = dnschef_lib.ThreadedUDPServer((interface, int(port)), dnschef_lib.UDPHandler, self.nametodns, nameservers, ipv6, self.log)
+    
+                    # Start a thread with the server -- that thread will then start more threads for each request
+                    server_thread = threading.Thread(target=self.server.serve_forever)
+    
+                    # Exit the server thread when the main thread terminates
+                    server_thread.daemon = True
+                    server_thread.start()
+    
+                except (KeyboardInterrupt, SystemExit):
+                    server.shutdown()
+                    self.log_action(self.logfile, "yaDNS is shutting down")
+                    sys.exit()
+    
+                except IOError:
+                    print "[!] Failed to open log file for writing."
+    
+                except Exception, e:
+                    error = "[!] Failed to start the server: %s" % e
+                    self.log_action(self.logfile, error)
+            else:
+                state = "off"
+                self.shutdown_server()
+            print("Switch was turned", state)
         else:
-            state = "off"
-            self.shutdown_server()
-            
-        print("Switch was turned", state)
+            self.switch.set_active(False)  
         
     def shutdown_server(self):
         self.dns_running = False
-        self.log_action(self.logfile, "DNS Switcher is shutting down")
-        server.shutdown()
-        server.server_close()
+        self.log_action(self.logfile, "yaDNS is shutting down")
+        self.server.shutdown()
+        self.server.server_close()
         self.switch.set_active(False)
         
     def shutdown_if_running(self):
@@ -505,16 +508,14 @@ class yaDNS(Gtk.Window):
            self.shutdown_server()
 
     def on_server_combo_changed(self, combo):
-        if combo.get_active() == 0:
-            self.nametodns = self.dns_config_1
-        elif combo.get_active() == 1:
-            self.nametodns = self.dns_config_2
-            
+        self.nametodns = self.dns_config_list[combo.get_active()]
         text = combo.get_active_text()
         if text != None:
             print("Selected: server=%s" % text)
             
         self.shutdown_if_running()
+        time.sleep(2)
+        self.switch.set_active(True)
 
     def on_check_button_toggled(self, checkbutton):
         if checkbutton.get_active():
