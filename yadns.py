@@ -41,6 +41,7 @@ class yaDNS(Gtk.Window):
         msg_external_dns   = "The external DNS to make calls to"
         msg_interface      = "The IP address to bind the DNS to"
         msg_log_file       = "Enter a filename to log actions to. Leave blank for no log"
+        #msg_server_over    = "Enter a filename containing DNS entries to load"
         msg_toggle_dns     = "Use netsh to change local network to use DNS\nNote: Must be running as administrator"
         msg_obtain_dns     = "Use netsh to obtain current external DNS and update the field"
 
@@ -165,8 +166,26 @@ class yaDNS(Gtk.Window):
         self.local_interface.set_max_width_chars(15)
         self.local_interface.set_text("127.0.0.1")
         self.box.pack_start(self.local_interface, False, False, 0)
-
+        
         self.listbox.add(self.int_row)   
+        
+        '''
+        # not implementing this for the time being
+        self.ovr_row = Gtk.ListBoxRow()
+        self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+        self.ovr_row.add(self.box)
+        self.lbl_ovr = Gtk.Label("Host File", xalign=0)
+        self.lbl_ovr.set_tooltip_text(msg_server_over)
+        self.box.pack_start(self.lbl_ovr, True, True, 0)
+
+        self.log_path = Gtk.Entry()
+        self.log_path.set_tooltip_text(msg_server_over)
+        self.log_path.set_width_chars(15)
+        self.log_path.set_max_width_chars(15)
+        self.box.pack_start(self.log_path, False, False, 0)
+
+        self.listbox.add(self.ovr_row)
+        '''   
         
         self.log_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
@@ -282,6 +301,7 @@ class yaDNS(Gtk.Window):
             cmdLine = [python_exe] + sys.argv
         elif type(cmdLine) not in (types.TupleType,types.ListType):
             raise ValueError, "cmdLine is not a sequence."
+        cmdLine = cmdLine[0].split()
         cmd = '"%s"' % (cmdLine[0],)
         # XXX TODO: isn't there a function or something we can call to massage command line params?
         params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
@@ -298,21 +318,26 @@ class yaDNS(Gtk.Window):
 
         # procHandle = win32api.ShellExecute(0, lpVerb, cmd, params, cmdDir, showCmd)
 
-        procInfo = ShellExecuteEx(nShow=showCmd,
+        try:
+            procInfo = ShellExecuteEx(nShow=showCmd,
                                   fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
                                   lpVerb=lpVerb,
                                   lpFile=cmd,
                                   lpParameters=params)
-
-        if wait:
-            procHandle = procInfo['hProcess']
-            obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
-            rc = win32process.GetExitCodeProcess(procHandle)
-            #print "Process handle %s returned code %s" % (procHandle, rc)
-        else:
-            rc = None
-
-        return rc
+                                  
+            if wait:
+                procHandle = procInfo['hProcess']
+                obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
+                rc = win32process.GetExitCodeProcess(procHandle)
+                #print "Process handle %s returned code %s" % (procHandle, rc)
+            else:
+                rc = None
+            return rc 
+        except:
+            self.log_action(self.logfile, "There was an error attempting to update your local network settings. Please do so manually.")
+            self.network_button.set_inconsistent(True)
+            self.network_button.set_label('Enable')
+            return None
 
     def on_grab_button_clicked(self, button):
         ext_dns = self.update_local_network_dns('Lookup')
@@ -333,16 +358,18 @@ class yaDNS(Gtk.Window):
                       if netsh_path:
                         full_cmd = '%s interface ip set dns %s static %s' % (netsh_path, active_connection, self.local_interface.get_text())
                         self.runAsAdmin([full_cmd])
-                        self.log_action(self.logfile, "Enabling local network interface DNS")
-                    #if subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "static", "127.0.0.1"], shell=False):
-                    #    return True
+                      else:
+                        subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "static", "127.0.0.1"], shell=False)
+                      self.log_action(self.logfile, "Enabling local network interface DNS")
                 elif toggle == 'Disable':
                     if not self.isUserAdmin():
-                      self.elevate()
-                    self.elevate()
-                    self.log_action(self.logfile, "Disabling local network interface DNS")
-                    if subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "dhcp"], shell=False):
-                        return True
+                      netsh_path = self.which('netsh.exe')
+                      if netsh_path:
+                        full_cmd = '%s interface ip set dns %s dhcp' % (netsh_path, active_connection)
+                        self.runAsAdmin([full_cmd])
+                    else:
+                         subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "dhcp"],shell=False)
+                         self.log_action(self.logfile, "Disabling local network interface DNS")
                 elif toggle == 'Lookup':
                     dns_list = ['DNS servers configured through DHCP', 'Statically Configured DNS Servers']
                     self.log_action(self.logfile, "Grabbing current DNS")
@@ -378,6 +405,7 @@ class yaDNS(Gtk.Window):
         self.prot_row.show()
         self.int_row.show()
         self.log_row.show()
+        #self.ovr_row.show()
         self.header_row1.show()
         self.header_row2.show()
         self.header_row3.show()
@@ -392,6 +420,7 @@ class yaDNS(Gtk.Window):
         self.prot_row.hide()
         self.int_row.hide()
         self.log_row.hide()
+        #self.ovr_row.hide()
         self.header_row1.hide()
         self.header_row2.hide()
         self.header_row3.hide()
