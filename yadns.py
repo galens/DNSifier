@@ -16,18 +16,19 @@ class yaDNS(Gtk.Window):
         self.tcp_val = False
         self.dns_running = False
         self.logfile = False
+        self.CREATE_NO_WINDOW = 0x08000000
+
+        self.dns_config_0 = dict()
+        self.dns_config_0['A'] = dict()
         self.dns_config_1 = dict()
         self.dns_config_1['A'] = dict()
-
-        self.dns_config_2 = dict()
-        self.dns_config_2['A'] = dict()
-
-        self.dns_config_1['A']['google.com'] = '127.0.0.1'
-        self.dns_config_2['A']['yahoo.com']  = '127.0.0.1'
+       
+        self.dns_config_0['A']['google.com'] = '127.0.0.1'
+        self.dns_config_1['A']['yahoo.com'] = '127.0.0.1'
         
-        self.dns_config_list = [self.dns_config_1, self.dns_config_2]
+        self.dns_config_list = [self.dns_config_0, self.dns_config_1]
         
-        self.nameserver = self.dns_config_1 # set default value in case no option is chosen
+        self.nameserver = self.dns_config_0 # set default value in case no option is chosen
         
         Gtk.Window.__init__(self, title="yaDNS by: Galen Senogles")
         self.set_border_width(15)
@@ -74,7 +75,7 @@ class yaDNS(Gtk.Window):
         self.lbl_Choice.set_tooltip_text(msg_choose_server)
         self.box.pack_start(self.lbl_Choice, True, True, 0)
 
-        self.servers = ["agvdemo07 - ATT", "agvdemo09 - Bell"]
+        self.servers = ["google.com", "yahoo.com"]
         self.servers_combo = Gtk.ComboBoxText()
         self.servers_combo.set_tooltip_text(msg_choose_server)
         self.servers_combo.connect("changed", self.on_server_combo_changed)
@@ -306,8 +307,8 @@ class yaDNS(Gtk.Window):
         # XXX TODO: isn't there a function or something we can call to massage command line params?
         params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
         cmdDir = ''
-        showCmd = win32con.SW_SHOWNORMAL
-        #showCmd = win32con.SW_HIDE
+        #showCmd = win32con.SW_SHOWNORMAL
+        showCmd = win32con.SW_HIDE
         lpVerb = 'runas'  # causes UAC elevation prompt.
 
         # print "Running", cmd, params
@@ -345,7 +346,7 @@ class yaDNS(Gtk.Window):
           self.dns_entry.set_text(ext_dns)
     
     def update_local_network_dns(self, toggle):
-        interface_cmd = subprocess.check_output(["netsh", "interface", "show", "interface"], shell=False)
+        interface_cmd = subprocess.check_output(["netsh", "interface", "show", "interface"], shell=False, creationflags=self.CREATE_NO_WINDOW)
         interface_split = interface_cmd.split("\r\n")
         for row in interface_split:
             if 'Enabled' in row and 'Connected' in row: 
@@ -359,7 +360,7 @@ class yaDNS(Gtk.Window):
                         full_cmd = '%s interface ip set dns %s static %s' % (netsh_path, active_connection, self.local_interface.get_text())
                         self.runAsAdmin([full_cmd])
                       else:
-                        subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "static", "127.0.0.1"], shell=False)
+                        subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "static", "127.0.0.1"], shell=False, creationflags=self.CREATE_NO_WINDOW)
                       self.log_action(self.logfile, "Enabling local network interface DNS")
                 elif toggle == 'Disable':
                     if not self.isUserAdmin():
@@ -368,12 +369,12 @@ class yaDNS(Gtk.Window):
                         full_cmd = '%s interface ip set dns %s dhcp' % (netsh_path, active_connection)
                         self.runAsAdmin([full_cmd])
                     else:
-                         subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "dhcp"],shell=False)
+                         subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "dhcp"],shell=False, creationflags=self.CREATE_NO_WINDOW)
                          self.log_action(self.logfile, "Disabling local network interface DNS")
                 elif toggle == 'Lookup':
                     dns_list = ['DNS servers configured through DHCP', 'Statically Configured DNS Servers']
                     self.log_action(self.logfile, "Grabbing current DNS")
-                    cur_dns = subprocess.check_output(["netsh", "interface", "ip", "show", "dns", "\"%s\"" % active_connection], shell=False)
+                    cur_dns = subprocess.check_output(["netsh", "interface", "ip", "show", "dns", "\"%s\"" % active_connection], shell=False, creationflags=self.CREATE_NO_WINDOW)
                     if cur_dns:
                         cur_dns_split = cur_dns.split("\r\n")
                         for row in cur_dns_split:
@@ -446,6 +447,13 @@ class yaDNS(Gtk.Window):
         else:
             print message
             return None
+            
+    def flush_dns(self):
+        interface_cmd = subprocess.check_output(["ipconfig", "/flushdns"], shell=False, creationflags=self.CREATE_NO_WINDOW)
+        interface_split = interface_cmd.split("\r\n")
+        for row in interface_split:
+            if 'Successfully flushed' in row and 'DNS' in row: 
+                return True
 
     def on_switch_activated(self, switch, gparam):
         global server
@@ -461,9 +469,10 @@ class yaDNS(Gtk.Window):
                 ipv6=False
                 port='53'
                 
-                self.log = self.log_action(self.logfile, 'yaDNS is active') 
+                self.log = self.log_action(self.logfile, 'yaDNS is active')
     
                 try:
+                    print self.nametodns
                     if self.tcp_val:
                         self.log_action(self.logfile, "yaDNS is running in TCP mode")
                         self.server = dnschef_lib.ThreadedTCPServer((interface, int(port)), dnschef_lib.TCPHandler, self.nametodns, nameservers, ipv6, self.log)
@@ -477,6 +486,9 @@ class yaDNS(Gtk.Window):
                     # Exit the server thread when the main thread terminates
                     server_thread.daemon = True
                     server_thread.start()
+                    
+                    # flush da dns oyy
+                    self.flush_dns()
     
                 except (KeyboardInterrupt, SystemExit):
                     server.shutdown()
@@ -514,8 +526,9 @@ class yaDNS(Gtk.Window):
             print("Selected: server=%s" % text)
             
         self.shutdown_if_running()
-        time.sleep(2)
+        time.sleep(1)
         self.switch.set_active(True)
+        self.flush_dns()        
 
     def on_check_button_toggled(self, checkbutton):
         if checkbutton.get_active():
