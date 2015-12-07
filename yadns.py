@@ -16,20 +16,33 @@ class yaDNS(Gtk.Window):
         self.tcp_val = False
         self.dns_running = False
         self.logfile = False
+        self.hostfile = False
         self.CREATE_NO_WINDOW = 0x08000000
 
-        self.dns_config_0 = dict()
-        self.dns_config_0['A'] = dict()
-        self.dns_config_1 = dict()
-        self.dns_config_1['A'] = dict()
+        self.dns_config = dict()
+        self.dns_config['no dns override'] = dict()
+        self.dns_config['no dns override']['A'] = dict()
+        self.dns_config['no dns override']['A']['foo.bar'] = '127.0.0.1'
+        self.dns_config['test01'] = dict()
+        self.dns_config['test01']['A'] = dict()
+        self.dns_config['test01']['A']['google.com'] = '127.0.0.1'
+        self.dns_config['test01']['A']['yahoo.com'] = '127.0.0.2'
+        self.dns_config['test01']['A']['msn.com'] = '127.0.0.3'
         
-        self.dns_config_0['A']['foobar.city'] = '127.0.0.1'
-        self.dns_config_1['A']['google.com'] = '127.0.0.2'
-        self.dns_config_1['A']['yahoo.com'] = '127.0.0.3'
+        self.dns_config['test02'] = dict()
+        self.dns_config['test02']['A'] = dict()
+        self.dns_config['test02']['A']['google.com'] = '127.0.0.4'
+        self.dns_config['test02']['A']['yahoo.com'] = '127.0.0.5'
+        self.dns_config['test02']['A']['msn.com'] = '127.0.0.6'
+        
+        self.dns_config['test03'] = dict()
+        self.dns_config['test03']['A'] = dict()
+        self.dns_config['test03']['A']['google.com'] = '127.0.0.7'
+        self.dns_config['test03']['A']['yahoo.com'] = '127.0.0.8'
+        self.dns_config['test03']['A']['msn.com'] = '127.0.0.9'
 
-        self.dns_config_list = [self.dns_config_0, self.dns_config_1]
 
-        self.nameserver = self.dns_config_0 # set default value in case no option is chosen
+        self.nameserver = self.dns_config['test01'] # set default value in case no option is chosen
 
         Gtk.Window.__init__(self, title="DNSifier by: Galen Senogles")
         self.set_border_width(15)
@@ -47,6 +60,7 @@ class yaDNS(Gtk.Window):
         #msg_server_over    = "Enter a filename containing DNS entries to load"
         msg_toggle_dns     = "Use netsh to change local network to use DNS\nNote: Must be running as administrator"
         msg_obtain_dns     = "Use netsh to obtain current external DNS and update the field"
+        msg_host_file      = "Specify a host file to load"
 
         self.box = Gtk.Box(spacing=6)
         self.add(self.box)
@@ -76,7 +90,8 @@ class yaDNS(Gtk.Window):
         self.lbl_Choice.set_tooltip_text(msg_choose_server)
         self.box.pack_start(self.lbl_Choice, True, True, 0)
 
-        self.servers = ["test1 - foo", "test1 - bar"]
+        # drop down options
+        self.servers = ['no dns override', 'test01', 'test02', 'test03']
         self.servers_combo = Gtk.ComboBoxText()
         self.servers_combo.set_tooltip_text(msg_choose_server)
         self.servers_combo.connect("changed", self.on_server_combo_changed)
@@ -171,24 +186,6 @@ class yaDNS(Gtk.Window):
 
         self.listbox.add(self.int_row)
 
-        '''
-        # not implementing this for the time being
-        self.ovr_row = Gtk.ListBoxRow()
-        self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-        self.ovr_row.add(self.box)
-        self.lbl_ovr = Gtk.Label("Host File", xalign=0)
-        self.lbl_ovr.set_tooltip_text(msg_server_over)
-        self.box.pack_start(self.lbl_ovr, True, True, 0)
-
-        self.log_path = Gtk.Entry()
-        self.log_path.set_tooltip_text(msg_server_over)
-        self.log_path.set_width_chars(15)
-        self.log_path.set_max_width_chars(15)
-        self.box.pack_start(self.log_path, False, False, 0)
-
-        self.listbox.add(self.ovr_row)
-        '''
-
         self.log_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.log_row.add(self.box)
@@ -203,6 +200,26 @@ class yaDNS(Gtk.Window):
         self.box.pack_start(self.log_path, False, False, 0)
 
         self.listbox.add(self.log_row)
+
+        self.host_row = Gtk.ListBoxRow()
+        self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+        self.host_row.add(self.box)
+        self.lbl_host = Gtk.Label("Host File", xalign=0)
+        self.lbl_host.set_tooltip_text(msg_host_file)
+        self.box.pack_start(self.lbl_host, True, True, 0)
+
+        #self.host_path = Gtk.Entry()
+        #self.host_path.set_tooltip_text(msg_host_file)
+        #self.host_path.set_width_chars(15)
+        #self.host_path.set_max_width_chars(15)
+        #self.box.pack_start(self.host_path, False, False, 0)
+
+        self.host_path = Gtk.Button("Choose File")
+        self.host_path.set_tooltip_text(msg_host_file)
+        self.host_path.connect("clicked", self.on_host_clicked)
+        self.box.pack_start(self.host_path, False, False, 0)
+
+        self.listbox.add(self.host_row)
 
         self.footer_row1 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
@@ -411,6 +428,7 @@ class yaDNS(Gtk.Window):
         self.prot_row.show()
         self.int_row.show()
         self.log_row.show()
+        self.host_row.show()
         #self.ovr_row.show()
         self.header_row1.show()
         self.header_row2.show()
@@ -426,6 +444,7 @@ class yaDNS(Gtk.Window):
         self.prot_row.hide()
         self.int_row.hide()
         self.log_row.hide()
+        self.host_row.hide()
         #self.ovr_row.hide()
         self.header_row1.hide()
         self.header_row2.hide()
@@ -460,6 +479,44 @@ class yaDNS(Gtk.Window):
             if 'Successfully flushed' in row and 'DNS' in row:
                 return True
 
+    def process_host(self, hostfile):
+        self.log_action(self.logfile, "Attempting to process external hostfile: %s" % (hostfile))
+        if os.path.isfile(hostfile):
+          self.servers = []
+          tmp = []
+          self.dns_config = dict()
+          self.servers_combo.remove_all()
+          self.dns_config['no dns override'] = dict()
+          self.dns_config['no dns override']['A'] = dict()
+          self.dns_config['no dns override']['A']['foo.bar'] = '127.0.0.1'
+          self.servers.append('no dns override')
+          with open(hostfile, 'r') as f:
+            i = 0
+            j = 1
+            for line in f:
+              if line[:1] != '#' and line.split():
+                self.servers.append(line.rstrip())
+                self.dns_config[self.servers[-1]] = dict()
+                self.dns_config[self.servers[-1]]['A'] = dict()
+              elif line[:1] == '#':
+                line = line[1:]
+                list_line = line.split()
+                for column in list_line[1:]:
+                  self.dns_config[self.servers[-1]]['A'][column] = list_line[0]
+                  #print 'self.dns_config_%s[\'A\'][\'%s\'] = \'%s\'' % (j, column, list_line[0])
+              else:
+                j +=1
+              i += 1
+
+          for s in self.servers:
+            self.servers_combo.append_text(s)
+          self.servers_combo.set_entry_text_column(0)
+          self.log_action(self.logfile, 'Host file successfully processed!')
+          return True
+        else:
+          self.log = self.log_action(self.logfile, 'There was a problem processing your host file, exiting')
+          exit()
+
     def on_switch_activated(self, switch, gparam):
         global server
         tree_iter = self.servers_combo.get_active_iter()
@@ -471,6 +528,7 @@ class yaDNS(Gtk.Window):
                 nameserver = self.dns_entry.get_text()
                 nameservers = dnschef_lib.returnNameServers(nameserver)
                 self.logfile = self.log_path.get_text()
+
                 ipv6=False
                 port='53'
 
@@ -525,15 +583,19 @@ class yaDNS(Gtk.Window):
            self.shutdown_server()
 
     def on_server_combo_changed(self, combo):
-        self.nametodns = self.dns_config_list[combo.get_active()]
         text = combo.get_active_text()
-        if text != None:
-            print("Selected: server=%s" % text)
+        if text:
+          returned_dict = self.dns_config.get(text)
+          if returned_dict:
+            self.nametodns = returned_dict
 
-        self.shutdown_if_running()
-        time.sleep(1)
-        self.switch.set_active(True)
-        self.flush_dns()
+          if text != None:
+              print("Selected: server=%s" % text)
+
+          self.shutdown_if_running()
+          time.sleep(1)
+          self.switch.set_active(True)
+          self.flush_dns()
 
     def on_check_button_toggled(self, checkbutton):
         if checkbutton.get_active():
@@ -553,8 +615,34 @@ class yaDNS(Gtk.Window):
 
         self.shutdown_if_running()
 
-    def on_save_clicked(self, button):
-        print("Saving configuration")
+    def on_host_clicked(self, widget):
+        dialog = Gtk.FileChooserDialog("Please choose a file", self,
+            Gtk.FileChooserAction.OPEN,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        self.add_filters(dialog)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            print("Open clicked")
+            print("File selected: " + dialog.get_filename())
+            self.process_host(dialog.get_filename())
+
+        elif response == Gtk.ResponseType.CANCEL:
+            print("Cancel clicked")
+        dialog.destroy()
+
+    def add_filters(self, dialog):
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("Text files")
+        filter_text.add_mime_type("text/plain")
+        dialog.add_filter(filter_text)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
 
 
 win = yaDNS()
