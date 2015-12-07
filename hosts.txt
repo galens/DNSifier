@@ -1,0 +1,12 @@
+test01 - foo
+#127.0.0.1 google.com
+#127.0.0.2 yahoo.com
+
+test02 - bar
+#127.0.0.3 google.com
+#127.0.0.4 yahoo.com
+
+test03 - bas
+#127.0.0.5 google.com
+#127.0.0.6 yahoo.com
+#127.0.0.7 msn.com

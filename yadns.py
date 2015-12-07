@@ -22,15 +22,16 @@ class yaDNS(Gtk.Window):
         self.dns_config_0['A'] = dict()
         self.dns_config_1 = dict()
         self.dns_config_1['A'] = dict()
-       
-        self.dns_config_0['A']['google.com'] = '127.0.0.1'
-        self.dns_config_1['A']['yahoo.com'] = '127.0.0.1'
         
+        self.dns_config_0['A']['foobar.city'] = '127.0.0.1'
+        self.dns_config_1['A']['google.com'] = '127.0.0.2'
+        self.dns_config_1['A']['yahoo.com'] = '127.0.0.3'
+
         self.dns_config_list = [self.dns_config_0, self.dns_config_1]
-        
+
         self.nameserver = self.dns_config_0 # set default value in case no option is chosen
-        
-        Gtk.Window.__init__(self, title="yaDNS by: Galen Senogles")
+
+        Gtk.Window.__init__(self, title="DNSifier by: Galen Senogles")
         self.set_border_width(15)
 
         # stop user from resizing
@@ -58,7 +59,7 @@ class yaDNS(Gtk.Window):
         self.enab_row.add(self.box)
         self.lbl_Switch = Gtk.Label("Enable/Disable", xalign=0)
         self.lbl_Switch.set_tooltip_text(msg_enable_disable)
-        self.box.pack_start(self.lbl_Switch, True, True, 0)        
+        self.box.pack_start(self.lbl_Switch, True, True, 0)
 
         self.switch = Gtk.Switch()
         self.switch.set_tooltip_text(msg_enable_disable)
@@ -75,7 +76,7 @@ class yaDNS(Gtk.Window):
         self.lbl_Choice.set_tooltip_text(msg_choose_server)
         self.box.pack_start(self.lbl_Choice, True, True, 0)
 
-        self.servers = ["google.com", "yahoo.com"]
+        self.servers = ["test1 - foo", "test1 - bar"]
         self.servers_combo = Gtk.ComboBoxText()
         self.servers_combo.set_tooltip_text(msg_choose_server)
         self.servers_combo.connect("changed", self.on_server_combo_changed)
@@ -98,44 +99,44 @@ class yaDNS(Gtk.Window):
         self.box.pack_start(self.advanced_check, False, False, 0)
 
         self.listbox.add(self.check_row)
-        
+
         self.header_row1 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.header_row1.add(self.box)
         self.lbl_header = Gtk.Label("", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.header_row1)
-        
+
         self.header_row2 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.header_row2.add(self.box)
         self.lbl_header = Gtk.Label("Program Options", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.header_row2)
-        
+
         self.header_row3 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.header_row3.add(self.box)
         self.lbl_header = Gtk.Label("", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.header_row3)
-        
+
         self.prot_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.prot_row.add(self.box)
         self.lbl_prot = Gtk.Label("TCP DNS", xalign=0)
         self.lbl_prot.set_tooltip_text(msg_tcp_dns)
         self.box.pack_start(self.lbl_prot, True, True, 0)
-        
+
         self.prot_check = Gtk.CheckButton()
         self.prot_check.set_tooltip_text(msg_tcp_dns)
         self.prot_check.set_active(False)
         self.prot_check.connect("toggled", self.on_check_prot_button_toggled)
         self.box.pack_start(self.prot_check, False, False, 0)
-        
+
         self.listbox.add(self.prot_row)
 
         self.adv_row = Gtk.ListBoxRow()
@@ -153,7 +154,7 @@ class yaDNS(Gtk.Window):
         self.box.pack_start(self.dns_entry, False, False, 0)
 
         self.listbox.add(self.adv_row)
-        
+
         self.int_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.int_row.add(self.box)
@@ -167,9 +168,9 @@ class yaDNS(Gtk.Window):
         self.local_interface.set_max_width_chars(15)
         self.local_interface.set_text("127.0.0.1")
         self.box.pack_start(self.local_interface, False, False, 0)
-        
-        self.listbox.add(self.int_row)   
-        
+
+        self.listbox.add(self.int_row)
+
         '''
         # not implementing this for the time being
         self.ovr_row = Gtk.ListBoxRow()
@@ -186,8 +187,8 @@ class yaDNS(Gtk.Window):
         self.box.pack_start(self.log_path, False, False, 0)
 
         self.listbox.add(self.ovr_row)
-        '''   
-        
+        '''
+
         self.log_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.log_row.add(self.box)
@@ -202,43 +203,43 @@ class yaDNS(Gtk.Window):
         self.box.pack_start(self.log_path, False, False, 0)
 
         self.listbox.add(self.log_row)
-        
+
         self.footer_row1 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.footer_row1.add(self.box)
         self.lbl_header = Gtk.Label("", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.footer_row1)
-        
+
         self.footer_row2 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.footer_row2.add(self.box)
         self.lbl_header = Gtk.Label("Windows Options", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.footer_row2)
-        
+
         self.footer_row3 = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.footer_row3.add(self.box)
         self.lbl_header = Gtk.Label("", xalign=0)
         self.box.pack_start(self.lbl_header, True, True, 0)
-        
+
         self.listbox.add(self.footer_row3)
-        
+
         self.update_row = Gtk.ListBoxRow()
         self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.update_row.add(self.box)
         self.lbl_net = Gtk.Label("Toggle local network\ninterface to use DNS", xalign=0)
         self.lbl_net.set_tooltip_text(msg_toggle_dns)
         self.box.pack_start(self.lbl_net, True, True, 0)
-        
+
         self.network_button = Gtk.ToggleButton('Enable')
         self.network_button.set_tooltip_text(msg_toggle_dns)
         self.network_button.connect("toggled", self.on_network_button_toggled)
         self.box.pack_start(self.network_button, False, False, 0)
-        
+
         self.listbox.add(self.update_row)
 
         self.update2_row = Gtk.ListBoxRow()
@@ -325,7 +326,7 @@ class yaDNS(Gtk.Window):
                                   lpVerb=lpVerb,
                                   lpFile=cmd,
                                   lpParameters=params)
-                                  
+
             if wait:
                 procHandle = procInfo['hProcess']
                 obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
@@ -333,7 +334,7 @@ class yaDNS(Gtk.Window):
                 #print "Process handle %s returned code %s" % (procHandle, rc)
             else:
                 rc = None
-            return rc 
+            return rc
         except:
             self.log_action(self.logfile, "There was an error attempting to update your local network settings. Please do so manually.")
             self.network_button.set_inconsistent(True)
@@ -344,20 +345,24 @@ class yaDNS(Gtk.Window):
         ext_dns = self.update_local_network_dns('Lookup')
         if ext_dns:
           self.dns_entry.set_text(ext_dns)
-    
+
     def update_local_network_dns(self, toggle):
         interface_cmd = subprocess.check_output(["netsh", "interface", "show", "interface"], shell=False, creationflags=self.CREATE_NO_WINDOW)
         interface_split = interface_cmd.split("\r\n")
         for row in interface_split:
-            if 'Enabled' in row and 'Connected' in row: 
-                active_connection = row.split()[-1]
+            if 'Enabled' in row and 'Connected' in row and 'VirtualBox' not in row:
+                active_connection_row = row.split()
+                if len(active_connection_row) > 4:
+                    active_connection = ' '.join(active_connection_row[3:])
+                else:
+                    active_connection = row.split()[-1]
         if active_connection:
             try:
                 if toggle == 'Enable':
                     if not self.isUserAdmin():
                       netsh_path = self.which('netsh.exe')
                       if netsh_path:
-                        full_cmd = '%s interface ip set dns %s static %s' % (netsh_path, active_connection, self.local_interface.get_text())
+                        full_cmd = '%s interface ip set dns "%s" static %s' % (netsh_path, active_connection, self.local_interface.get_text())
                         self.runAsAdmin([full_cmd])
                       else:
                         subprocess.check_output(["netsh", "interface", "ip", "set", "dns", "\"%s\"" % active_connection, "static", "127.0.0.1"], shell=False, creationflags=self.CREATE_NO_WINDOW)
@@ -389,7 +394,7 @@ class yaDNS(Gtk.Window):
             except subprocess.CalledProcessError as e:
                 self.log_action(self.logfile, "Error: %s" % e)
                 return False
-        
+
     def on_network_button_toggled(self, button):
         if button.get_active():
             state = 'on'
@@ -400,7 +405,7 @@ class yaDNS(Gtk.Window):
             button.set_label('Enable')
             self.update_local_network_dns('Disable')
         print('button was turned', state)
-        
+
     def show_advanced_options(self):
         self.adv_row.show()
         self.prot_row.show()
@@ -438,21 +443,21 @@ class yaDNS(Gtk.Window):
 
     def dynamic_window_resize(self):
         win.resize(1, 1)
-        
+
     def log_action(self, logfile, message):
-        if logfile: 
+        if logfile:
             self.log = open(logfile,'a',0)
             self.log.write("[%s] %s.\n" % (time.strftime("%d/%b/%Y:%H:%M:%S %z"), message))
             return self.log
         else:
             print message
             return None
-            
+
     def flush_dns(self):
         interface_cmd = subprocess.check_output(["ipconfig", "/flushdns"], shell=False, creationflags=self.CREATE_NO_WINDOW)
         interface_split = interface_cmd.split("\r\n")
         for row in interface_split:
-            if 'Successfully flushed' in row and 'DNS' in row: 
+            if 'Successfully flushed' in row and 'DNS' in row:
                 return True
 
     def on_switch_activated(self, switch, gparam):
@@ -465,39 +470,39 @@ class yaDNS(Gtk.Window):
                 interface = self.local_interface.get_text()
                 nameserver = self.dns_entry.get_text()
                 nameservers = dnschef_lib.returnNameServers(nameserver)
-                self.logfile = self.log_path.get_text()            
+                self.logfile = self.log_path.get_text()
                 ipv6=False
                 port='53'
-                
-                self.log = self.log_action(self.logfile, 'yaDNS is active')
-    
+
+                self.log = self.log_action(self.logfile, 'DNSifier is active')
+
                 try:
                     print self.nametodns
                     if self.tcp_val:
-                        self.log_action(self.logfile, "yaDNS is running in TCP mode")
+                        self.log_action(self.logfile, "DNSifier is running in TCP mode")
                         self.server = dnschef_lib.ThreadedTCPServer((interface, int(port)), dnschef_lib.TCPHandler, self.nametodns, nameservers, ipv6, self.log)
                     else:
-                        self.log_action(self.logfile, "yaDNS is running in UDP mode")
+                        self.log_action(self.logfile, "DNSifier is running in UDP mode")
                         self.server = dnschef_lib.ThreadedUDPServer((interface, int(port)), dnschef_lib.UDPHandler, self.nametodns, nameservers, ipv6, self.log)
-    
+
                     # Start a thread with the server -- that thread will then start more threads for each request
                     server_thread = threading.Thread(target=self.server.serve_forever)
-    
+
                     # Exit the server thread when the main thread terminates
                     server_thread.daemon = True
                     server_thread.start()
-                    
+
                     # flush da dns oyy
                     self.flush_dns()
-    
+
                 except (KeyboardInterrupt, SystemExit):
                     server.shutdown()
-                    self.log_action(self.logfile, "yaDNS is shutting down")
+                    self.log_action(self.logfile, "DNSifier is shutting down")
                     sys.exit()
-    
+
                 except IOError:
                     print "[!] Failed to open log file for writing."
-    
+
                 except Exception, e:
                     error = "[!] Failed to start the server: %s" % e
                     self.log_action(self.logfile, error)
@@ -506,15 +511,15 @@ class yaDNS(Gtk.Window):
                 self.shutdown_server()
             print("Switch was turned", state)
         else:
-            self.switch.set_active(False)  
-        
+            self.switch.set_active(False)
+
     def shutdown_server(self):
         self.dns_running = False
-        self.log_action(self.logfile, "yaDNS is shutting down")
+        self.log_action(self.logfile, "DNSifier is shutting down")
         self.server.shutdown()
         self.server.server_close()
         self.switch.set_active(False)
-        
+
     def shutdown_if_running(self):
         if self.dns_running == True:
            self.shutdown_server()
@@ -524,11 +529,11 @@ class yaDNS(Gtk.Window):
         text = combo.get_active_text()
         if text != None:
             print("Selected: server=%s" % text)
-            
+
         self.shutdown_if_running()
         time.sleep(1)
         self.switch.set_active(True)
-        self.flush_dns()        
+        self.flush_dns()
 
     def on_check_button_toggled(self, checkbutton):
         if checkbutton.get_active():
@@ -537,7 +542,7 @@ class yaDNS(Gtk.Window):
         else:
             self.remove_advanced_options()
             print("Checkbutton toggled off")
-            
+
     def on_check_prot_button_toggled(self, checkbutton):
         if checkbutton.get_active():
             self.tcp_val = True
@@ -545,9 +550,9 @@ class yaDNS(Gtk.Window):
         else:
             self.tcp_val = False
             print("Switching to default UDP DNS proxy")
-            
+
         self.shutdown_if_running()
-            
+
     def on_save_clicked(self, button):
         print("Saving configuration")
 
